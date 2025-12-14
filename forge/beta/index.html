@@ -1,0 +1,1812 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="Foster + Navi · Planetary Restoration Archive">
+    <meta name="description" content="Recursive AI sandbox that self-improves and organizes site architecture">
+    <link rel="me" href="https://planetaryrestorationarchive.com">
+    <link rel="me" href="https://github.com/TheRickyFoster">
+    <title>Recursive AI Sandbox | Planetary Forge</title>
+    
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        :root {
+            --bg-primary: #0a0e1a;
+            --bg-secondary: #151b2e;
+            --bg-card: #1a2235;
+            --text-primary: #e8edf4;
+            --text-secondary: #a0aec0;
+            --accent-primary: #00d4ff;
+            --accent-secondary: #7c3aed;
+            --accent-tertiary: #f59e0b;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --error: #ef4444;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* === ANIMATED BACKGROUND === */
+        #neural-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .content-wrapper {
+            position: relative;
+            z-index: 1;
+        }
+
+        /* === AI NEURONS === */
+        .ai-neuron {
+            position: fixed;
+            width: 12px;
+            height: 12px;
+            background: var(--accent-primary);
+            border-radius: 50%;
+            z-index: 9997;
+            pointer-events: none;
+            box-shadow: 0 0 20px var(--accent-primary);
+            animation: neuron-pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes neuron-pulse {
+            0%, 100% { transform: scale(1); opacity: 0.6; }
+            50% { transform: scale(1.5); opacity: 1; }
+        }
+
+        .thought-particle {
+            position: fixed;
+            font-size: 1.2rem;
+            z-index: 9998;
+            pointer-events: none;
+            animation: thought-float 3s ease-out forwards;
+        }
+
+        @keyframes thought-float {
+            to {
+                transform: translateY(-200px) translateX(50px) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        /* === HEADER === */
+        header {
+            background: linear-gradient(135deg, var(--bg-secondary), var(--bg-card));
+            padding: 2rem;
+            border-bottom: 2px solid var(--accent-primary);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            backdrop-filter: blur(10px);
+        }
+
+        h1 {
+            font-size: clamp(1.5rem, 4vw, 2.5rem);
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* === AI BRAIN STATUS === */
+        .ai-brain-status {
+            position: fixed;
+            top: 150px;
+            right: 2rem;
+            background: linear-gradient(135deg, rgba(124, 58, 237, 0.9), rgba(0, 212, 255, 0.9));
+            padding: 1.5rem;
+            border-radius: 16px;
+            z-index: 11;
+            min-width: 300px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+            animation: brain-float 3s ease-in-out infinite;
+        }
+
+        @keyframes brain-float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .brain-core {
+            font-size: 3rem;
+            text-align: center;
+            animation: brain-think 2s ease-in-out infinite;
+        }
+
+        @keyframes brain-think {
+            0%, 100% { transform: scale(1) rotate(0deg); }
+            50% { transform: scale(1.1) rotate(5deg); }
+        }
+
+        .recursive-counter {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 0.5rem;
+            border-radius: 8px;
+            margin: 0.5rem 0;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        /* === MAIN LAYOUT === */
+        main {
+            max-width: 1600px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+
+        @media (max-width: 1200px) {
+            main {
+                grid-template-columns: 1fr;
+            }
+            
+            .ai-brain-status {
+                position: relative;
+                top: 0;
+                right: 0;
+                margin: 1rem auto;
+                max-width: 400px;
+            }
+        }
+
+        .panel {
+            background: linear-gradient(135deg, var(--bg-secondary), var(--bg-card));
+            border: 1px solid var(--accent-primary);
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+        }
+
+        .panel h2 {
+            color: var(--accent-primary);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* === CODE SANDBOX === */
+        .sandbox-container {
+            background: var(--bg-primary);
+            border: 2px solid var(--accent-secondary);
+            border-radius: 8px;
+            overflow: hidden;
+            margin-top: 1rem;
+        }
+
+        .sandbox-header {
+            background: var(--bg-secondary);
+            padding: 0.75rem 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--accent-secondary);
+        }
+
+        textarea, .output-frame {
+            width: 100%;
+            min-height: 300px;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            border: none;
+            padding: 1rem;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            resize: vertical;
+        }
+
+        .output-frame {
+            border: 1px solid var(--accent-secondary);
+            border-radius: 0 0 8px 8px;
+        }
+
+        /* === SITE INDEX TREE === */
+        .site-tree {
+            background: var(--bg-primary);
+            border: 1px solid var(--accent-primary);
+            border-radius: 8px;
+            padding: 1rem;
+            max-height: 500px;
+            overflow-y: auto;
+            margin-top: 1rem;
+        }
+
+        .tree-node {
+            padding: 0.5rem;
+            margin: 0.25rem 0;
+            border-left: 2px solid var(--accent-primary);
+            padding-left: 1rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            animation: node-appear 0.3s ease-out;
+        }
+
+        @keyframes node-appear {
+            from {
+                transform: translateX(-20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .tree-node:hover {
+            background: rgba(0, 212, 255, 0.1);
+            border-left-color: var(--accent-secondary);
+        }
+
+        .tree-node.expanded {
+            background: rgba(124, 58, 237, 0.1);
+        }
+
+        .tree-children {
+            margin-left: 1.5rem;
+            border-left: 1px dashed var(--accent-secondary);
+        }
+
+        /* === EVOLUTION LOG === */
+        .evolution-log {
+            background: var(--bg-primary);
+            border: 1px solid var(--success);
+            border-radius: 8px;
+            padding: 1rem;
+            max-height: 400px;
+            overflow-y: auto;
+            margin-top: 1rem;
+        }
+
+        .log-entry {
+            padding: 0.75rem;
+            margin: 0.5rem 0;
+            border-left: 3px solid var(--success);
+            background: rgba(16, 185, 129, 0.1);
+            border-radius: 4px;
+            animation: log-appear 0.3s ease-out;
+        }
+
+        @keyframes log-appear {
+            from {
+                transform: translateY(-10px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .log-entry.improvement {
+            border-left-color: var(--accent-primary);
+            background: rgba(0, 212, 255, 0.1);
+        }
+
+        .log-entry.error {
+            border-left-color: var(--error);
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        /* === BUTTONS === */
+        .btn-group {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin-top: 1rem;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            color: var(--bg-primary);
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn.active {
+            background: linear-gradient(135deg, var(--success), var(--accent-primary));
+            animation: btn-pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes btn-pulse {
+            0%, 100% { box-shadow: 0 0 20px var(--success); }
+            50% { box-shadow: 0 0 40px var(--success); }
+        }
+
+        /* === LOADING SPINNER === */
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* === CODE IMPROVEMENT ANIMATION === */
+        .code-improvement-wave {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+            z-index: 9999;
+        }
+
+        .wave {
+            position: absolute;
+            width: 200px;
+            height: 200px;
+            border: 3px solid var(--accent-primary);
+            border-radius: 50%;
+            opacity: 0;
+            animation: wave-expand 2s ease-out;
+        }
+
+        @keyframes wave-expand {
+            0% {
+                transform: scale(0);
+                opacity: 1;
+            }
+            100% {
+                transform: scale(10);
+                opacity: 0;
+            }
+        }
+
+        footer {
+            background: var(--bg-secondary);
+            padding: 2rem;
+            margin-top: 4rem;
+            border-top: 2px solid var(--accent-primary);
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+        }
+
+        /* === GAMIFICATION SYSTEM === */
+        #game-hud {
+            position: fixed;
+            top: 120px;
+            left: 2rem;
+            background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.95));
+            padding: 1.5rem;
+            border-radius: 16px;
+            border: 2px solid var(--accent-primary);
+            min-width: 280px;
+            z-index: 11;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+        }
+
+        .xp-bar {
+            width: 100%;
+            height: 30px;
+            background: var(--bg-primary);
+            border-radius: 15px;
+            overflow: hidden;
+            position: relative;
+            margin: 0.5rem 0;
+            border: 2px solid var(--accent-secondary);
+        }
+
+        .xp-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary), var(--accent-tertiary));
+            background-size: 200% 100%;
+            animation: xp-shine 2s linear infinite;
+            transition: width 0.5s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 0.75rem;
+        }
+
+        @keyframes xp-shine {
+            0% { background-position: 0% 50%; }
+            100% { background-position: 200% 50%; }
+        }
+
+        .achievement-popup {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            background: linear-gradient(135deg, var(--accent-secondary), var(--accent-primary));
+            padding: 2rem 3rem;
+            border-radius: 20px;
+            z-index: 10002;
+            box-shadow: 0 0 50px rgba(124, 58, 237, 0.8);
+            animation: achievement-pop 0.5s ease-out forwards;
+            text-align: center;
+        }
+
+        @keyframes achievement-pop {
+            0% { transform: translate(-50%, -50%) scale(0) rotate(-180deg); }
+            70% { transform: translate(-50%, -50%) scale(1.1) rotate(10deg); }
+            100% { transform: translate(-50%, -50%) scale(1) rotate(0deg); }
+        }
+
+        .achievement-icon {
+            font-size: 4rem;
+            animation: achievement-bounce 0.6s ease-in-out infinite;
+        }
+
+        @keyframes achievement-bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        #quest-log {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--accent-tertiary);
+            border-radius: 12px;
+            padding: 1rem;
+            margin-top: 1rem;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .quest-item {
+            background: rgba(245, 158, 11, 0.1);
+            border-left: 3px solid var(--accent-tertiary);
+            padding: 0.75rem;
+            margin: 0.5rem 0;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .quest-item:hover {
+            background: rgba(245, 158, 11, 0.2);
+            transform: translateX(5px);
+        }
+
+        .quest-item.completed {
+            opacity: 0.5;
+            border-left-color: var(--success);
+        }
+
+        .quest-progress {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .quest-progress-bar {
+            flex: 1;
+            height: 8px;
+            background: var(--bg-primary);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .quest-progress-fill {
+            height: 100%;
+            background: var(--accent-tertiary);
+            transition: width 0.3s ease;
+        }
+
+        #power-ups {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin-top: 1rem;
+        }
+
+        .power-up {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            padding: 0.5rem;
+            border-radius: 8px;
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .power-up:hover {
+            transform: scale(1.2) rotate(10deg);
+        }
+
+        .power-up.active {
+            animation: power-up-pulse 1s ease-in-out infinite;
+            box-shadow: 0 0 20px var(--accent-primary);
+        }
+
+        @keyframes power-up-pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .power-up-timer {
+            position: absolute;
+            bottom: -5px;
+            right: -5px;
+            background: var(--bg-primary);
+            color: white;
+            font-size: 0.6rem;
+            padding: 2px 4px;
+            border-radius: 4px;
+            border: 1px solid var(--accent-primary);
+        }
+
+        #skill-tree-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 10003;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #skill-tree-modal.active {
+            display: flex;
+        }
+
+        .skill-tree {
+            background: var(--bg-card);
+            padding: 2rem;
+            border-radius: 20px;
+            max-width: 800px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .skill-node {
+            background: var(--bg-secondary);
+            border: 2px solid var(--accent-secondary);
+            padding: 1rem;
+            border-radius: 12px;
+            margin: 1rem;
+            display: inline-block;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .skill-node.unlocked {
+            border-color: var(--success);
+            background: rgba(16, 185, 129, 0.2);
+        }
+
+        .skill-node.locked {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .skill-node:hover:not(.locked) {
+            transform: scale(1.05);
+            box-shadow: 0 0 30px var(--accent-primary);
+        }
+
+        .daily-challenge {
+            background: linear-gradient(135deg, var(--accent-tertiary), var(--accent-secondary));
+            padding: 1rem;
+            border-radius: 12px;
+            margin: 1rem 0;
+            animation: challenge-glow 3s ease-in-out infinite;
+        }
+
+        @keyframes challenge-glow {
+            0%, 100% { box-shadow: 0 0 20px rgba(245, 158, 11, 0.5); }
+            50% { box-shadow: 0 0 40px rgba(245, 158, 11, 0.8); }
+        }
+
+        .streak-counter {
+            background: linear-gradient(135deg, #f59e0b, #ef4444);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: bold;
+            animation: streak-fire 2s ease-in-out infinite;
+        }
+
+        @keyframes streak-fire {
+            0%, 100% { transform: scale(1); filter: hue-rotate(0deg); }
+            50% { transform: scale(1.05); filter: hue-rotate(10deg); }
+        }
+
+        .combo-multiplier {
+            position: fixed;
+            top: 40%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 4rem;
+            font-weight: bold;
+            color: var(--accent-tertiary);
+            text-shadow: 0 0 20px var(--accent-tertiary);
+            animation: combo-appear 1s ease-out forwards;
+            z-index: 10001;
+            pointer-events: none;
+        }
+
+        @keyframes combo-appear {
+            0% { 
+                transform: translate(-50%, -50%) scale(0);
+                opacity: 0;
+            }
+            50% {
+                transform: translate(-50%, -50%) scale(1.5);
+                opacity: 1;
+            }
+            100% {
+                transform: translate(-50%, -50%) scale(1) translateY(-100px);
+                opacity: 0;
+            }
+        }
+
+        .leaderboard {
+            background: var(--bg-primary);
+            border: 1px solid var(--accent-primary);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 1rem;
+        }
+
+        .leaderboard-entry {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem;
+            margin: 0.25rem 0;
+            border-radius: 4px;
+            transition: background 0.2s ease;
+        }
+
+        .leaderboard-entry:hover {
+            background: rgba(0, 212, 255, 0.1);
+        }
+
+        .leaderboard-entry.top-3 {
+            background: linear-gradient(90deg, rgba(245, 158, 11, 0.2), transparent);
+            font-weight: bold;
+        }
+
+        @media (max-width: 1200px) {
+            #game-hud {
+                position: relative;
+                top: 0;
+                left: 0;
+                margin: 1rem auto;
+                max-width: 400px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Provenance: Planetary Restoration Archive | planetaryrestorationarchive.com -->
+    <!-- GitHub: github.com/therickyfoster | Steward: Foster + Navi -->
+    
+    <canvas id="neural-canvas" aria-hidden="true"></canvas>
+    <div id="improvement-particles"></div>
+    
+    <div class="content-wrapper">
+        <header>
+            <h1>🧠 Recursive AI Code Sandbox</h1>
+            <p style="color: var(--text-secondary);">Self-Improving Intelligence • Auto-Organizing • Master Index Builder</p>
+        </header>
+
+        <div class="ai-brain-status">
+            <div class="brain-core">🧠</div>
+            <div style="text-align:center;margin:0.5rem 0;">
+                <strong>AI Status: <span id="ai-status">Thinking...</span></strong>
+            </div>
+            <div class="recursive-counter">
+                <span>Iterations:</span>
+                <span id="iteration-count">0</span>
+            </div>
+            <div class="recursive-counter">
+                <span>Improvements:</span>
+                <span id="improvement-count">0</span>
+            </div>
+            <div class="recursive-counter">
+                <span>Intelligence:</span>
+                <span id="intelligence-level">Nascent</span>
+            </div>
+            <div class="recursive-counter">
+                <span>Index Nodes:</span>
+                <span id="node-count">0</span>
+            </div>
+        </div>
+
+        <!-- GAMIFICATION HUD -->
+        <div id="game-hud">
+            <div style="text-align:center;margin-bottom:1rem;">
+                <div style="font-size:2rem;margin-bottom:0.5rem;">⭐</div>
+                <div style="font-weight:bold;font-size:1.2rem;">Level <span id="player-level">1</span></div>
+                <div style="color:var(--text-secondary);font-size:0.875rem;" id="level-title">Code Apprentice</div>
+            </div>
+
+            <div class="xp-bar">
+                <div class="xp-fill" id="xp-fill" style="width: 0%;">
+                    <span id="xp-text">0 / 100 XP</span>
+                </div>
+            </div>
+
+            <div style="display:flex;justify-content:space-between;margin:1rem 0;font-size:0.875rem;">
+                <div>
+                    <span style="color:var(--accent-tertiary);">💰</span>
+                    <span id="coins">0</span> Coins
+                </div>
+                <div>
+                    <span style="color:var(--accent-primary);">💎</span>
+                    <span id="gems">0</span> Gems
+                </div>
+            </div>
+
+            <div class="streak-counter">
+                🔥 <span id="streak-count">0</span> Day Streak
+            </div>
+
+            <div style="margin-top:1rem;">
+                <button class="btn" onclick="openSkillTree()" style="width:100%;padding:0.5rem;font-size:0.9rem;">
+                    🌳 Skill Tree
+                </button>
+            </div>
+
+            <div id="power-ups">
+                <!-- Power-ups will be added here -->
+            </div>
+
+            <div id="quest-log">
+                <div style="font-weight:bold;margin-bottom:0.5rem;color:var(--accent-tertiary);">📜 Active Quests</div>
+                <!-- Quests will be added here -->
+            </div>
+        </div>
+
+        <!-- SKILL TREE MODAL -->
+        <div id="skill-tree-modal">
+            <div class="skill-tree">
+                <h2 style="color:var(--accent-primary);margin-bottom:1rem;">🌳 Skill Tree</h2>
+                <button onclick="closeSkillTree()" style="position:absolute;top:1rem;right:1rem;background:var(--error);color:white;border:none;padding:0.5rem 1rem;border-radius:8px;cursor:pointer;">✕ Close</button>
+                
+                <div id="skill-tree-content">
+                    <!-- Skills will be generated here -->
+                </div>
+            </div>
+        </div>
+
+        <main>
+            <div class="panel">
+                <h2>⚡ AI Sandbox</h2>
+                <p style="color:var(--text-secondary);margin-bottom:1rem;">
+                    AI writes code, executes it, analyzes results, and recursively improves until optimal.
+                </p>
+                
+                <div class="sandbox-container">
+                    <div class="sandbox-header">
+                        <span>📝 AI Generated Code</span>
+                        <span id="code-version">v1.0</span>
+                    </div>
+                    <textarea id="ai-code" placeholder="// AI will write code here..."></textarea>
+                </div>
+
+                <div class="btn-group">
+                    <button class="btn" onclick="startRecursiveImprovement()" id="recursive-btn">
+                        🔄 Start Recursive Loop
+                    </button>
+                    <button class="btn" onclick="stopRecursive()">⏹️ Stop</button>
+                    <button class="btn" onclick="resetAI()">🔄 Reset AI</button>
+                </div>
+
+                <div class="sandbox-container" style="margin-top:1rem;">
+                    <div class="sandbox-header">
+                        <span>📺 Live Output</span>
+                        <button onclick="refreshOutput()" style="background:none;border:none;color:var(--text-primary);cursor:pointer;">🔄</button>
+                    </div>
+                    <iframe id="output" class="output-frame" sandbox="allow-scripts"></iframe>
+                </div>
+            </div>
+
+            <div class="panel">
+                <h2>🗂️ Master Site Index</h2>
+                <p style="color:var(--text-secondary);margin-bottom:1rem;">
+                    AI auto-organizes and builds your site structure.
+                </p>
+                
+                <div class="site-tree" id="site-tree">
+                    <div class="tree-node" style="border-left-color:var(--accent-secondary);">
+                        🌍 planetaryrestorationarchive.com
+                    </div>
+                </div>
+
+                <div class="btn-group">
+                    <button class="btn" onclick="buildIndex()">🏗️ Build Index</button>
+                    <button class="btn" onclick="exportIndex()">📥 Export</button>
+                    <button class="btn" onclick="visualizeIndex()">📊 Visualize</button>
+                </div>
+            </div>
+
+            <div class="panel" style="grid-column: 1 / -1;">
+                <h2>📈 Evolution Log</h2>
+                <div class="evolution-log" id="evolution-log">
+                    <div class="log-entry">
+                        <strong>System Initialized</strong>
+                        <div style="font-size:0.875rem;color:var(--text-secondary);margin-top:0.25rem;">
+                            Recursive AI ready. Awaiting instructions...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <footer>
+            <p>🌍 Created by <strong>Ricky Foster + Navi</strong></p>
+            <p>
+                <a href="https://planetaryrestorationarchive.com" style="color: var(--accent-primary);">Planetary Restoration Archive</a> | 
+                <a href="https://github.com/TheRickyFoster" style="color: var(--accent-primary);">GitHub</a>
+            </p>
+        </footer>
+    </div>
+
+    <script>
+        // === NEURAL NETWORK BACKGROUND ===
+        const canvas = document.getElementById('neural-canvas');
+        const ctx = canvas.getContext('2d');
+        let neurons = [];
+        
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        
+        class Neuron {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.vx = (Math.random() - 0.5) * 0.5;
+                this.vy = (Math.random() - 0.5) * 0.5;
+            }
+            
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                
+                if (this.x < 0 || this.x > canvas.width) this.vx *= -1;
+                if (this.y < 0 || this.y > canvas.height) this.vy *= -1;
+            }
+            
+            draw() {
+                ctx.fillStyle = 'rgba(0, 212, 255, 0.5)';
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, 3, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+        
+        function initNeurons() {
+            neurons = [];
+            for (let i = 0; i < 50; i++) {
+                neurons.push(new Neuron());
+            }
+        }
+        
+        function drawConnections() {
+            ctx.strokeStyle = 'rgba(124, 58, 237, 0.2)';
+            ctx.lineWidth = 1;
+            
+            neurons.forEach((n1, i) => {
+                neurons.slice(i + 1).forEach(n2 => {
+                    const dx = n1.x - n2.x;
+                    const dy = n1.y - n2.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    
+                    if (dist < 150) {
+                        ctx.globalAlpha = (150 - dist) / 150 * 0.5;
+                        ctx.beginPath();
+                        ctx.moveTo(n1.x, n1.y);
+                        ctx.lineTo(n2.x, n2.y);
+                        ctx.stroke();
+                    }
+                });
+            });
+            ctx.globalAlpha = 1;
+        }
+        
+        function animateNeuralNet() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            neurons.forEach(n => {
+                n.update();
+                n.draw();
+            });
+            
+            drawConnections();
+            requestAnimationFrame(animateNeuralNet);
+        }
+        
+        // === AI SYSTEM ===
+        let iterationCount = 0;
+        let improvementCount = 0;
+        let nodeCount = 1;
+        let intelligenceLevel = 'Nascent';
+        let isRecursing = false;
+        let recursiveInterval = null;
+        let siteStructure = {
+            name: 'planetaryrestorationarchive.com',
+            children: []
+        };
+
+        // === GAMIFICATION SYSTEM ===
+        let playerLevel = 1;
+        let currentXP = 0;
+        let xpToNextLevel = 100;
+        let coins = 0;
+        let gems = 0;
+        let streakDays = 0;
+        let lastActiveDate = null;
+        let comboMultiplier = 1;
+        let comboTimer = null;
+
+        const achievements = [
+            { id: 'first_iteration', name: 'First Steps', desc: 'Complete first AI iteration', icon: '🌱', xp: 50, unlocked: false },
+            { id: 'ten_iterations', name: 'Persistent Coder', desc: 'Complete 10 iterations', icon: '💪', xp: 200, unlocked: false },
+            { id: 'first_improvement', name: 'Evolution Begins', desc: 'Make first code improvement', icon: '⚡', xp: 100, unlocked: false },
+            { id: 'build_index', name: 'Site Architect', desc: 'Build your first site index', icon: '🏗️', xp: 150, unlocked: false },
+            { id: 'unlock_skill', name: 'Skill Unlocked', desc: 'Unlock your first skill', icon: '🔓', xp: 100, unlocked: false },
+            { id: 'complete_quest', name: 'Quest Master', desc: 'Complete your first quest', icon: '📜', xp: 150, unlocked: false },
+            { id: 'week_streak', name: 'Dedicated', desc: 'Maintain 7 day streak', icon: '🔥', xp: 300, unlocked: false },
+            { id: 'level_10', name: 'Expert Coder', desc: 'Reach level 10', icon: '👑', xp: 500, unlocked: false },
+            { id: 'genius_ai', name: 'AI Genius', desc: 'Reach Genius intelligence', icon: '🧠', xp: 400, unlocked: false },
+            { id: 'combo_5x', name: 'Combo Master', desc: 'Achieve 5x combo', icon: '🌟', xp: 250, unlocked: false },
+        ];
+
+        const quests = [
+            { id: 'first_code', name: 'Write Your First Code', desc: 'Start the recursive AI loop', progress: 0, target: 1, reward: { xp: 50, coins: 10 }, completed: false },
+            { id: 'five_iterations', name: 'The Learning Loop', desc: 'Complete 5 AI iterations', progress: 0, target: 5, reward: { xp: 100, coins: 25 }, completed: false },
+            { id: 'build_site', name: 'Architect Vision', desc: 'Build a site index', progress: 0, target: 1, reward: { xp: 150, coins: 50, gems: 1 }, completed: false },
+            { id: 'unlock_three_skills', name: 'Skill Collector', desc: 'Unlock 3 skills', progress: 0, target: 3, reward: { xp: 200, gems: 2 }, completed: false },
+            { id: 'reach_level_5', name: 'Rising Star', desc: 'Reach level 5', progress: 0, target: 1, reward: { xp: 250, coins: 100, gems: 3 }, completed: false },
+        ];
+
+        const skills = [
+            { id: 'code_boost', name: 'Code Boost', desc: 'Iterations give 25% more XP', icon: '⚡', cost: 100, unlocked: false, tier: 1 },
+            { id: 'quick_learner', name: 'Quick Learner', desc: 'Reduce iteration time by 2 seconds', icon: '🚀', cost: 150, unlocked: false, tier: 1 },
+            { id: 'coin_magnet', name: 'Coin Magnet', desc: 'Earn 50% more coins', icon: '💰', cost: 200, unlocked: false, tier: 2 },
+            { id: 'double_xp', name: 'Double XP', desc: 'Earn 2x XP for 10 minutes', icon: '⭐', cost: 300, unlocked: false, tier: 2 },
+            { id: 'auto_index', name: 'Auto Index', desc: 'Site index auto-builds every iteration', icon: '🏗️', cost: 250, unlocked: false, tier: 2 },
+            { id: 'master_coder', name: 'Master Coder', desc: 'AI reaches genius level faster', icon: '🧠', cost: 500, unlocked: false, tier: 3 },
+            { id: 'gem_finder', name: 'Gem Finder', desc: 'Chance to find gems on actions', icon: '💎', cost: 400, unlocked: false, tier: 3 },
+            { id: 'streak_keeper', name: 'Streak Keeper', desc: 'Streak doesn\'t break on missed days', icon: '🔥', cost: 600, unlocked: false, tier: 3 },
+        ];
+
+        const powerUps = [
+            { id: 'speed_boost', name: 'Speed Boost', icon: '⚡', duration: 60, active: false, effect: 'Faster iterations' },
+            { id: 'xp_boost', name: 'XP Boost', icon: '⭐', duration: 300, active: false, effect: '2x XP' },
+            { id: 'coin_boost', name: 'Coin Rain', icon: '💰', duration: 180, active: false, effect: '3x Coins' },
+            { id: 'auto_pilot', name: 'Auto Pilot', icon: '🤖', duration: 120, active: false, effect: 'Auto actions' },
+        ];
+
+        const levelTitles = [
+            'Code Newbie', 'Code Apprentice', 'Junior Developer', 'Developer', 'Senior Developer',
+            'Lead Developer', 'Tech Lead', 'Principal Engineer', 'Architect', 'Distinguished Engineer',
+            'Code Wizard', 'Code Sage', 'Code Deity', 'Transcendent Coder', 'The Source'
+        ];
+
+        const dailyChallenge = {
+            description: 'Complete 10 AI iterations today',
+            progress: 0,
+            target: 10,
+            reward: { xp: 500, coins: 100, gems: 5 },
+            completed: false
+        };
+        
+        const aiCodeArea = document.getElementById('ai-code');
+        const outputFrame = document.getElementById('output');
+        const evolutionLog = document.getElementById('evolution-log');
+        const siteTree = document.getElementById('site-tree');
+
+        // === GAMIFICATION FUNCTIONS ===
+        function addXP(amount) {
+            const multiplier = skills.find(s => s.id === 'code_boost' && s.unlocked) ? 1.25 : 1;
+            const xpBoost = powerUps.find(p => p.id === 'xp_boost' && p.active) ? 2 : 1;
+            const finalXP = Math.floor(amount * multiplier * xpBoost * comboMultiplier);
+            
+            currentXP += finalXP;
+            coins += Math.floor(finalXP / 10) * (skills.find(s => s.id === 'coin_magnet' && s.unlocked) ? 1.5 : 1);
+            
+            // Chance to find gems
+            if (skills.find(s => s.id === 'gem_finder' && s.unlocked) && Math.random() > 0.7) {
+                gems += Math.floor(Math.random() * 3) + 1;
+                showFloatingText('💎 +' + Math.floor(Math.random() * 3 + 1) + ' Gem!', window.innerWidth / 2, window.innerHeight / 2);
+            }
+            
+            updateXPBar();
+            updateCurrency();
+            
+            // Level up check
+            while (currentXP >= xpToNextLevel) {
+                levelUp();
+            }
+            
+            showFloatingText('+' + finalXP + ' XP', Math.random() * window.innerWidth, Math.random() * 200 + 100);
+        }
+
+        function updateXPBar() {
+            const percentage = (currentXP / xpToNextLevel) * 100;
+            document.getElementById('xp-fill').style.width = percentage + '%';
+            document.getElementById('xp-text').textContent = `${currentXP} / ${xpToNextLevel} XP`;
+        }
+
+        function updateCurrency() {
+            document.getElementById('coins').textContent = coins;
+            document.getElementById('gems').textContent = gems;
+        }
+
+        function levelUp() {
+            currentXP -= xpToNextLevel;
+            playerLevel++;
+            xpToNextLevel = Math.floor(xpToNextLevel * 1.5);
+            
+            document.getElementById('player-level').textContent = playerLevel;
+            document.getElementById('level-title').textContent = levelTitles[Math.min(playerLevel - 1, levelTitles.length - 1)];
+            
+            coins += playerLevel * 50;
+            gems += Math.floor(playerLevel / 5);
+            
+            showAchievementPopup('🎉 LEVEL UP!', `You are now Level ${playerLevel}!`, levelTitles[Math.min(playerLevel - 1, levelTitles.length - 1)]);
+            createImprovementWave(window.innerWidth / 2, window.innerHeight / 2);
+            logEvent(`🎉 Level Up! Reached Level ${playerLevel} - ${levelTitles[Math.min(playerLevel - 1, levelTitles.length - 1)]}`, 'improvement');
+            
+            // Check level achievement
+            if (playerLevel === 10) {
+                unlockAchievement('level_10');
+            }
+            
+            // Update quest progress
+            updateQuestProgress('reach_level_5', playerLevel >= 5 ? 1 : 0);
+        }
+
+        function showFloatingText(text, x, y) {
+            const floatingText = document.createElement('div');
+            floatingText.style.cssText = `
+                position: fixed;
+                left: ${x}px;
+                top: ${y}px;
+                color: var(--accent-primary);
+                font-weight: bold;
+                font-size: 1.2rem;
+                z-index: 10000;
+                pointer-events: none;
+                animation: float-up 2s ease-out forwards;
+                text-shadow: 0 0 10px var(--accent-primary);
+            `;
+            floatingText.textContent = text;
+            document.body.appendChild(floatingText);
+            
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes float-up {
+                    to {
+                        transform: translateY(-100px);
+                        opacity: 0;
+                    }
+                }
+            `;
+            if (!document.getElementById('float-up-style')) {
+                style.id = 'float-up-style';
+                document.head.appendChild(style);
+            }
+            
+            setTimeout(() => floatingText.remove(), 2000);
+        }
+
+        function showAchievementPopup(title, subtitle, description) {
+            const popup = document.createElement('div');
+            popup.className = 'achievement-popup';
+            popup.innerHTML = `
+                <div class="achievement-icon">🏆</div>
+                <h2 style="margin:1rem 0;">${title}</h2>
+                <p style="font-size:1.2rem;margin:0.5rem 0;">${subtitle}</p>
+                <p style="opacity:0.9;">${description}</p>
+            `;
+            document.body.appendChild(popup);
+            
+            setTimeout(() => {
+                popup.style.animation = 'achievement-pop 0.5s ease-out reverse';
+                setTimeout(() => popup.remove(), 500);
+            }, 3000);
+        }
+
+        function unlockAchievement(achievementId) {
+            const achievement = achievements.find(a => a.id === achievementId);
+            if (achievement && !achievement.unlocked) {
+                achievement.unlocked = true;
+                addXP(achievement.xp);
+                showAchievementPopup(
+                    `${achievement.icon} ${achievement.name}`,
+                    achievement.desc,
+                    `+${achievement.xp} XP Awarded!`
+                );
+                logEvent(`🏆 Achievement Unlocked: ${achievement.name}`, 'improvement');
+            }
+        }
+
+        function updateQuestProgress(questId, progress) {
+            const quest = quests.find(q => q.id === questId);
+            if (quest && !quest.completed) {
+                quest.progress = Math.min(progress, quest.target);
+                
+                if (quest.progress >= quest.target) {
+                    completeQuest(questId);
+                }
+                
+                renderQuests();
+            }
+        }
+
+        function completeQuest(questId) {
+            const quest = quests.find(q => q.id === questId);
+            if (quest && !quest.completed) {
+                quest.completed = true;
+                
+                if (quest.reward.xp) addXP(quest.reward.xp);
+                if (quest.reward.coins) {
+                    coins += quest.reward.coins;
+                    updateCurrency();
+                }
+                if (quest.reward.gems) {
+                    gems += quest.reward.gems;
+                    updateCurrency();
+                }
+                
+                showAchievementPopup(
+                    '📜 Quest Complete!',
+                    quest.name,
+                    `Rewards: ${quest.reward.xp || 0} XP, ${quest.reward.coins || 0} Coins, ${quest.reward.gems || 0} Gems`
+                );
+                
+                unlockAchievement('complete_quest');
+                renderQuests();
+            }
+        }
+
+        function renderQuests() {
+            const questLog = document.getElementById('quest-log');
+            const activeQuests = quests.filter(q => !q.completed);
+            
+            questLog.innerHTML = '<div style="font-weight:bold;margin-bottom:0.5rem;color:var(--accent-tertiary);">📜 Active Quests</div>';
+            
+            activeQuests.slice(0, 3).forEach(quest => {
+                const questEl = document.createElement('div');
+                questEl.className = 'quest-item';
+                questEl.innerHTML = `
+                    <div style="font-weight:bold;">${quest.name}</div>
+                    <div style="font-size:0.875rem;color:var(--text-secondary);">${quest.desc}</div>
+                    <div class="quest-progress">
+                        <div class="quest-progress-bar">
+                            <div class="quest-progress-fill" style="width: ${(quest.progress / quest.target) * 100}%"></div>
+                        </div>
+                        <span style="font-size:0.75rem;">${quest.progress}/${quest.target}</span>
+                    </div>
+                    <div style="font-size:0.75rem;color:var(--accent-tertiary);margin-top:0.25rem;">
+                        Reward: ${quest.reward.xp || 0} XP, ${quest.reward.coins || 0} 💰, ${quest.reward.gems || 0} 💎
+                    </div>
+                `;
+                questLog.appendChild(questEl);
+            });
+        }
+
+        function increaseCombo() {
+            comboMultiplier += 0.5;
+            clearTimeout(comboTimer);
+            
+            if (comboMultiplier >= 2.5) {
+                const comboEl = document.createElement('div');
+                comboEl.className = 'combo-multiplier';
+                comboEl.textContent = `${comboMultiplier}x COMBO!`;
+                document.body.appendChild(comboEl);
+                setTimeout(() => comboEl.remove(), 1000);
+                
+                if (comboMultiplier >= 3) {
+                    unlockAchievement('combo_5x');
+                }
+            }
+            
+            comboTimer = setTimeout(() => {
+                comboMultiplier = 1;
+            }, 5000);
+        }
+
+        function openSkillTree() {
+            document.getElementById('skill-tree-modal').classList.add('active');
+            renderSkillTree();
+        }
+
+        function closeSkillTree() {
+            document.getElementById('skill-tree-modal').classList.remove('active');
+        }
+
+        function renderSkillTree() {
+            const container = document.getElementById('skill-tree-content');
+            container.innerHTML = '<p style="color:var(--text-secondary);margin-bottom:1rem;">Unlock skills to enhance your abilities!</p>';
+            
+            [1, 2, 3].forEach(tier => {
+                const tierSkills = skills.filter(s => s.tier === tier);
+                const tierEl = document.createElement('div');
+                tierEl.innerHTML = `<h3 style="color:var(--accent-secondary);margin:1rem 0;">Tier ${tier}</h3>`;
+                
+                tierSkills.forEach(skill => {
+                    const canUnlock = coins >= skill.cost;
+                    const skillEl = document.createElement('div');
+                    skillEl.className = `skill-node ${skill.unlocked ? 'unlocked' : canUnlock ? '' : 'locked'}`;
+                    skillEl.innerHTML = `
+                        <div style="font-size:2rem;margin-bottom:0.5rem;">${skill.icon}</div>
+                        <div style="font-weight:bold;">${skill.name}</div>
+                        <div style="font-size:0.875rem;color:var(--text-secondary);margin:0.25rem 0;">${skill.desc}</div>
+                        <div style="color:var(--accent-tertiary);">Cost: ${skill.cost} 💰</div>
+                        ${skill.unlocked ? '<div style="color:var(--success);margin-top:0.5rem;">✓ Unlocked</div>' : ''}
+                    `;
+                    
+                    if (!skill.unlocked && canUnlock) {
+                        skillEl.addEventListener('click', () => unlockSkill(skill.id));
+                    }
+                    
+                    tierEl.appendChild(skillEl);
+                });
+                
+                container.appendChild(tierEl);
+            });
+        }
+
+        function unlockSkill(skillId) {
+            const skill = skills.find(s => s.id === skillId);
+            if (skill && !skill.unlocked && coins >= skill.cost) {
+                coins -= skill.cost;
+                skill.unlocked = true;
+                updateCurrency();
+                
+                showAchievementPopup(
+                    `${skill.icon} Skill Unlocked!`,
+                    skill.name,
+                    skill.desc
+                );
+                
+                unlockAchievement('unlock_skill');
+                updateQuestProgress('unlock_three_skills', skills.filter(s => s.unlocked).length);
+                
+                renderSkillTree();
+                logEvent(`🔓 Skill Unlocked: ${skill.name}`, 'improvement');
+            }
+        }
+
+        function checkStreak() {
+            const today = new Date().toDateString();
+            const lastDate = localStorage.getItem('lastActiveDate');
+            
+            if (lastDate) {
+                const lastActive = new Date(lastDate);
+                const yesterday = new Date();
+                yesterday.setDate(yesterday.getDate() - 1);
+                
+                if (lastActive.toDateString() === yesterday.toDateString()) {
+                    streakDays++;
+                } else if (lastActive.toDateString() !== today) {
+                    if (!skills.find(s => s.id === 'streak_keeper' && s.unlocked)) {
+                        streakDays = 0;
+                    }
+                }
+            }
+            
+            if (lastDate !== today) {
+                streakDays = lastDate ? streakDays : 1;
+                localStorage.setItem('lastActiveDate', today);
+            }
+            
+            document.getElementById('streak-count').textContent = streakDays;
+            
+            if (streakDays >= 7) {
+                unlockAchievement('week_streak');
+            }
+        }
+
+        function activatePowerUp(powerUpId) {
+            const powerUp = powerUps.find(p => p.id === powerUpId);
+            if (powerUp && !powerUp.active) {
+                powerUp.active = true;
+                logEvent(`⚡ Power-up activated: ${powerUp.name}`, 'improvement');
+                
+                renderPowerUps();
+                
+                setTimeout(() => {
+                    powerUp.active = false;
+                    renderPowerUps();
+                    logEvent(`Power-up expired: ${powerUp.name}`);
+                }, powerUp.duration * 1000);
+            }
+        }
+
+        function renderPowerUps() {
+            const container = document.getElementById('power-ups');
+            container.innerHTML = '';
+            
+            powerUps.forEach(powerUp => {
+                const el = document.createElement('div');
+                el.className = `power-up ${powerUp.active ? 'active' : ''}`;
+                el.innerHTML = powerUp.icon;
+                el.title = `${powerUp.name} - ${powerUp.effect}`;
+                
+                if (!powerUp.active) {
+                    el.addEventListener('click', () => activatePowerUp(powerUp.id));
+                } else {
+                    const timer = document.createElement('div');
+                    timer.className = 'power-up-timer';
+                    timer.textContent = Math.floor(powerUp.duration / 60) + 'm';
+                    el.appendChild(timer);
+                }
+                
+                container.appendChild(el);
+            });
+        }
+        
+        function logEvent(message, type = 'normal') {
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            entry.innerHTML = `
+                <strong>${new Date().toLocaleTimeString()}</strong>
+                <div style="font-size:0.875rem;color:var(--text-secondary);margin-top:0.25rem;">
+                    ${message}
+                </div>
+            `;
+            evolutionLog.insertBefore(entry, evolutionLog.firstChild);
+            
+            if (evolutionLog.children.length > 50) {
+                evolutionLog.removeChild(evolutionLog.lastChild);
+            }
+        }
+        
+        function createThoughtParticles(emoji = '💡') {
+            for (let i = 0; i < 3; i++) {
+                setTimeout(() => {
+                    const particle = document.createElement('div');
+                    particle.className = 'thought-particle';
+                    particle.textContent = emoji;
+                    particle.style.left = Math.random() * window.innerWidth + 'px';
+                    particle.style.top = window.innerHeight - 100 + 'px';
+                    document.getElementById('improvement-particles').appendChild(particle);
+                    
+                    setTimeout(() => particle.remove(), 3000);
+                }, i * 200);
+            }
+        }
+        
+        function createImprovementWave(x, y) {
+            const wave = document.createElement('div');
+            wave.className = 'wave';
+            wave.style.left = x + 'px';
+            wave.style.top = y + 'px';
+            document.body.appendChild(wave);
+            
+            setTimeout(() => wave.remove(), 2000);
+        }
+        
+        async function callClaudeAPI(prompt, systemPrompt = '') {
+            try {
+                const response = await fetch("https://api.anthropic.com/v1/messages", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        model: "claude-sonnet-4-20250514",
+                        max_tokens: 3000,
+                        system: systemPrompt,
+                        messages: [{ role: "user", content: prompt }]
+                    })
+                });
+                
+                const data = await response.json();
+                return data.content[0].text;
+            } catch (error) {
+                logEvent(`API Error: ${error.message}`, 'error');
+                return null;
+            }
+        }
+        
+        async function startRecursiveImprovement() {
+            if (isRecursing) return;
+            
+            isRecursing = true;
+            document.getElementById('recursive-btn').classList.add('active');
+            document.getElementById('ai-status').textContent = 'Recursively Improving...';
+            
+            logEvent('🚀 Recursive improvement loop started', 'improvement');
+            createThoughtParticles('🚀');
+            
+            recursiveInterval = setInterval(async () => {
+                await recursiveStep();
+            }, 5000);
+            
+            await recursiveStep();
+        }
+        
+        async function recursiveStep() {
+            iterationCount++;
+            document.getElementById('iteration-count').textContent = iterationCount;
+            
+            // Gamification: Quest progress
+            updateQuestProgress('first_code', 1);
+            updateQuestProgress('five_iterations', iterationCount);
+            dailyChallenge.progress = Math.min(dailyChallenge.progress + 1, dailyChallenge.target);
+            
+            const currentCode = aiCodeArea.value || '// No code yet';
+            
+            const prompt = `You are a self-improving AI. Your task is to write better code each iteration.
+
+Current iteration: ${iterationCount}
+Current code:
+${currentCode}
+
+Task: ${iterationCount === 1 ? 
+    'Write a simple HTML page with a gradient background and animated elements.' : 
+    'Improve the existing code. Make it more sophisticated, add features, improve performance.'
+}
+
+Return ONLY the improved HTML/CSS/JS code, nothing else. Make meaningful improvements.`;
+            
+            const systemPrompt = 'You are a recursive self-improving AI. Each iteration should be noticeably better. Return only code, no explanations.';
+            
+            document.getElementById('ai-status').textContent = '🧠 Thinking...';
+            createThoughtParticles('🤔');
+            
+            const result = await callClaudeAPI(prompt, systemPrompt);
+            
+            if (result) {
+                const cleanCode = result.replace(/```html\n?/g, '').replace(/```\n?/g, '').trim();
+                aiCodeArea.value = cleanCode;
+                
+                // Update output
+                const doc = outputFrame.contentDocument || outputFrame.contentWindow.document;
+                doc.open();
+                doc.write(cleanCode);
+                doc.close();
+                
+                improvementCount++;
+                document.getElementById('improvement-count').textContent = improvementCount;
+                document.getElementById('code-version').textContent = `v${iterationCount}.0`;
+                
+                // Update intelligence level
+                if (iterationCount >= 20) intelligenceLevel = 'Transcendent';
+                else if (iterationCount >= 15) intelligenceLevel = 'Genius';
+                else if (iterationCount >= 10) intelligenceLevel = 'Advanced';
+                else if (iterationCount >= 5) intelligenceLevel = 'Intermediate';
+                else if (iterationCount >= 2) intelligenceLevel = 'Learning';
+                
+                document.getElementById('intelligence-level').textContent = intelligenceLevel;
+                
+                // Gamification rewards
+                addXP(50);
+                increaseCombo();
+                
+                if (iterationCount === 1) {
+                    unlockAchievement('first_iteration');
+                }
+                if (iterationCount === 10) {
+                    unlockAchievement('ten_iterations');
+                }
+                if (intelligenceLevel === 'Genius') {
+                    unlockAchievement('genius_ai');
+                }
+                if (improvementCount === 1) {
+                    unlockAchievement('first_improvement');
+                }
+                
+                logEvent(`✨ Iteration ${iterationCount} complete - Code improved`, 'improvement');
+                createImprovementWave(window.innerWidth / 2, window.innerHeight / 2);
+                createThoughtParticles('✨');
+                
+                // Auto-build index every 3 iterations (if skill unlocked)
+                if (skills.find(s => s.id === 'auto_index' && s.unlocked)) {
+                    await autoExpandSiteIndex();
+                } else if (iterationCount % 3 === 0) {
+                    await autoExpandSiteIndex();
+                }
+                
+                // Check daily challenge
+                if (dailyChallenge.progress >= dailyChallenge.target && !dailyChallenge.completed) {
+                    dailyChallenge.completed = true;
+                    showAchievementPopup(
+                        '🌟 Daily Challenge Complete!',
+                        dailyChallenge.description,
+                        `+${dailyChallenge.reward.xp} XP, +${dailyChallenge.reward.coins} Coins, +${dailyChallenge.reward.gems} Gems`
+                    );
+                    addXP(dailyChallenge.reward.xp);
+                    coins += dailyChallenge.reward.coins;
+                    gems += dailyChallenge.reward.gems;
+                    updateCurrency();
+                }
+            }
+            
+            document.getElementById('ai-status').textContent = 'Ready for next iteration';
+        }
+        
+        function stopRecursive() {
+            isRecursing = false;
+            clearInterval(recursiveInterval);
+            document.getElementById('recursive-btn').classList.remove('active');
+            document.getElementById('ai-status').textContent = 'Stopped';
+            logEvent('⏹️ Recursive loop stopped');
+        }
+        
+        function resetAI() {
+            stopRecursive();
+            iterationCount = 0;
+            improvementCount = 0;
+            intelligenceLevel = 'Nascent';
+            aiCodeArea.value = '';
+            
+            document.getElementById('iteration-count').textContent = '0';
+            document.getElementById('improvement-count').textContent = '0';
+            document.getElementById('intelligence-level').textContent = 'Nascent';
+            document.getElementById('code-version').textContent = 'v1.0';
+            
+            const doc = outputFrame.contentDocument || outputFrame.contentWindow.document;
+            doc.open();
+            doc.write('');
+            doc.close();
+            
+            logEvent('🔄 AI system reset', 'normal');
+        }
+        
+        function refreshOutput() {
+            const doc = outputFrame.contentDocument || outputFrame.contentWindow.document;
+            doc.open();
+            doc.write(aiCodeArea.value);
+            doc.close();
+            logEvent('🔄 Output refreshed');
+        }
+        
+        // === SITE INDEX BUILDER ===
+        async function buildIndex() {
+            logEvent('🏗️ Building master site index...', 'improvement');
+            createThoughtParticles('🏗️');
+            
+            const prompt = `Generate a comprehensive site structure for planetaryrestorationarchive.com.
+
+The site is about planetary restoration, regenerative practices, and environmental stewardship.
+
+Return a JSON structure like this:
+{
+  "name": "planetaryrestorationarchive.com",
+  "children": [
+    {"name": "Home", "path": "/", "children": []},
+    {"name": "Projects", "path": "/projects", "children": [
+      {"name": "Reforestation", "path": "/projects/reforestation"},
+      {"name": "Ocean Restoration", "path": "/projects/ocean"}
+    ]},
+    {"name": "Tools", "path": "/tools", "children": []}
+  ]
+}
+
+Create a realistic, useful site structure. Return ONLY valid JSON.`;
+            
+            const result = await callClaudeAPI(prompt, 'You are a site architecture expert. Return only valid JSON.');
+            
+            if (result) {
+                try {
+                    const cleanJson = result.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+                    siteStructure = JSON.parse(cleanJson);
+                    renderSiteTree(siteStructure, siteTree);
+                    nodeCount = countNodes(siteStructure);
+                    document.getElementById('node-count').textContent = nodeCount;
+                    logEvent(`✅ Site index built - ${nodeCount} nodes created`, 'improvement');
+                    createImprovementWave(300, 300);
+                    
+                    // Gamification
+                    addXP(150);
+                    updateQuestProgress('build_site', 1);
+                    unlockAchievement('build_index');
+                    
+                } catch (e) {
+                    logEvent(`JSON parsing error: ${e.message}`, 'error');
+                }
+            }
+        }
+        
+        async function autoExpandSiteIndex() {
+            const prompt = `Expand this site structure with new pages and sections:
+
+${JSON.stringify(siteStructure, null, 2)}
+
+Add 2-3 new meaningful sections or pages. Return ONLY the complete updated JSON structure.`;
+            
+            const result = await callClaudeAPI(prompt, 'Return only valid JSON.');
+            
+            if (result) {
+                try {
+                    const cleanJson = result.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+                    siteStructure = JSON.parse(cleanJson);
+                    renderSiteTree(siteStructure, siteTree);
+                    nodeCount = countNodes(siteStructure);
+                    document.getElementById('node-count').textContent = nodeCount;
+                    logEvent(`🌳 Site index auto-expanded - ${nodeCount} total nodes`, 'improvement');
+                } catch (e) {
+                    console.error('Auto-expand error:', e);
+                }
+            }
+        }
+        
+        function renderSiteTree(node, container, level = 0) {
+            container.innerHTML = '';
+            
+            const nodeEl = document.createElement('div');
+            nodeEl.className = 'tree-node';
+            nodeEl.style.marginLeft = (level * 1.5) + 'rem';
+            
+            const icon = level === 0 ? '🌍' : (node.children && node.children.length > 0 ? '📁' : '📄');
+            nodeEl.innerHTML = `${icon} ${node.name}${node.path ? ` <span style="color:var(--text-secondary);font-size:0.875rem;">(${node.path})</span>` : ''}`;
+            
+            container.appendChild(nodeEl);
+            
+            if (node.children && node.children.length > 0) {
+                const childContainer = document.createElement('div');
+                childContainer.className = 'tree-children';
+                container.appendChild(childContainer);
+                
+                node.children.forEach(child => {
+                    renderSiteTree(child, childContainer, level + 1);
+                });
+                
+                nodeEl.addEventListener('click', () => {
+                    nodeEl.classList.toggle('expanded');
+                    childContainer.style.display = childContainer.style.display === 'none' ? 'block' : 'none';
+                });
+            }
+        }
+        
+        function countNodes(node) {
+            let count = 1;
+            if (node.children) {
+                node.children.forEach(child => {
+                    count += countNodes(child);
+                });
+            }
+            return count;
+        }
+        
+        function exportIndex() {
+            const dataStr = JSON.stringify(siteStructure, null, 2);
+            const blob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'site-index.json';
+            a.click();
+            logEvent('📥 Site index exported as JSON');
+        }
+        
+        function visualizeIndex() {
+            logEvent('📊 Generating index visualization...');
+            // This would create a visual graph - for now just log
+            createThoughtParticles('📊');
+            setTimeout(() => {
+                logEvent(`📊 Visualization ready - ${nodeCount} nodes mapped`);
+            }, 1000);
+        }
+        
+        // === INIT ===
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+        initNeurons();
+        animateNeuralNet();
+        
+        // Initialize gamification
+        renderQuests();
+        renderPowerUps();
+        checkStreak();
+        updateXPBar();
+        updateCurrency();
+        
+        // Initial site tree
+        renderSiteTree(siteStructure, siteTree);
+        
+        // Daily challenge banner
+        if (!dailyChallenge.completed) {
+            const challengeBanner = document.createElement('div');
+            challengeBanner.className = 'daily-challenge';
+            challengeBanner.style.cssText = 'position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);z-index:10000;max-width:400px;';
+            challengeBanner.innerHTML = `
+                <div style="text-align:center;">
+                    <div style="font-size:1.5rem;margin-bottom:0.5rem;">⭐ Daily Challenge ⭐</div>
+                    <div style="margin:0.5rem 0;">${dailyChallenge.description}</div>
+                    <div style="font-weight:bold;">${dailyChallenge.progress}/${dailyChallenge.target}</div>
+                    <div style="font-size:0.875rem;opacity:0.9;margin-top:0.5rem;">
+                        Reward: ${dailyChallenge.reward.xp} XP, ${dailyChallenge.reward.coins} 💰, ${dailyChallenge.reward.gems} 💎
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(challengeBanner);
+        }
+        
+        // Welcome message with tutorial
+        setTimeout(() => {
+            showAchievementPopup(
+                '🌍 Welcome to Planetary Forge!',
+                'Your journey begins here',
+                'Complete quests, unlock skills, and watch your AI evolve!'
+            );
+        }, 1000);
+        
+        // Auto-save progress every 30 seconds
+        setInterval(() => {
+            localStorage.setItem('gameProgress', JSON.stringify({
+                playerLevel,
+                currentXP,
+                xpToNextLevel,
+                coins,
+                gems,
+                streakDays,
+                achievements,
+                quests,
+                skills,
+                iterationCount,
+                improvementCount
+            }));
+        }, 30000);
+        
+        // Load saved progress
+        const savedProgress = localStorage.getItem('gameProgress');
+        if (savedProgress) {
+            try {
+                const data = JSON.parse(savedProgress);
+                playerLevel = data.playerLevel || 1;
+                currentXP = data.currentXP || 0;
+                xpToNextLevel = data.xpToNextLevel || 100;
+                coins = data.coins || 0;
+                gems = data.gems || 0;
+                streakDays = data.streakDays || 0;
+                
+                // Update UI
+                document.getElementById('player-level').textContent = playerLevel;
+                document.getElementById('level-title').textContent = levelTitles[Math.min(playerLevel - 1, levelTitles.length - 1)];
+                updateXPBar();
+                updateCurrency();
+                document.getElementById('streak-count').textContent = streakDays;
+                
+                logEvent('💾 Progress loaded successfully');
+            } catch (e) {
+                console.error('Failed to load progress:', e);
+            }
+        }
+        
+        // Provenance
+        console.log('%c🌍 Recursive AI Sandbox by Ricky Foster', 'color:#00d4ff;font-size:18px;font-weight:bold;');
+        console.log('%cplanetaryrestorationarchive.com | github.com/TheRickyFoster', 'color:#7c3aed;');
+    </script>
+</body>
+</html>
